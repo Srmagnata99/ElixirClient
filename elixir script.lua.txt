@@ -86,86 +86,63 @@ Icon.MouseButton1Click:Connect(function()
 end)
 
 local start, objectposition, dragging, currentpos
+local UserInputService = game:GetService("UserInputService")
 
 UserInputService.InputBegan:Connect(function(input)
-	if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
-	conducting = conducting + 1
-	touchpoints[conducting] = input
-	end
-	if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and not hasdragged and dragoutline and dragoutline.Visible == true then
-	dragoutline.Visible = false; hasdragged = true
-	end
-	end)
+    if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+        dragging = true
+        start = input.Position
+        objectposition = object.Position
+        if dragoutline then
+            dragoutline.Visible = true
+        end
+    end
+end)
 
-local dragtouch
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - start
+        currentpos = UDim2.new(objectposition.X.Scale, objectposition.X.Offset + delta.X, objectposition.Y.Scale, objectposition.Y.Offset + delta.Y)
+        
+        if dragoutline then
+            dragoutline.Position = currentpos
+        else
+            object.Position = currentpos
+        end
+    end
+end)
 
-import.InputBegan:Connect(function(input)
-	if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
-	dragging = true
-	dragtouch = input
-	start = input.Position
-	if dragoutline then
-	dragoutline.Visible = true
-	end
-	objectposition = object.Position
-	end
-	end)
+UserInputService.InputEnded:Connect(function(input)
+    if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and dragging then
+        dragging = false
+        if dragoutline then
+            dragoutline.Visible = false
+        end
+        object.Position = currentpos
+    end
+end)
 
-Utility.connect(services.InputService.InputChanged, function(input)
-	if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and dragging then
-	local input = input
-	if multi then
-	input = dragtouch
-	end
-	currentpos = UDim2.new(objectposition.X.Scale, objectposition.X.Offset + (input.Position - start).X, objectposition.Y.Scale, objectposition.Y.Offset + (input.Position - start).Y)
-	if dragoutline then
-	dragoutline.Position = currentpos
-	end
-	end
-	end)
-
-Utility.connect(services.InputService.InputEnded, function(input)
-	if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and dragging then
-	dragging = false
-	dragtouch = nil
-	if dragoutline then
-	dragoutline.Visible = false
-	end
-	object.Position = currentpos
-	end
-	end)
-
-local Signal
-Signal = UserInputService.InputEnded:Connect(function(input)
-	if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
-	touchpoints[conducting] = nil
-	conducting = conducting - 1
-	end
-	end)
-
-end
-
+-- Function to get the center of the screen
 function Utility.getcenter(sizeX, sizeY)
-return UDim2.new(0.5, -(sizeX / 2), 0.5, -(sizeY / 2))
+    return UDim2.new(0.5, -(sizeX / 2), 0.5, -(sizeY / 2))
 end
 
+-- Clean up old GUI instances and connections
 if getgenv and getgenv().ScreenGui_ then
-ScreenGui_:Destroy()
+    ScreenGui_:Destroy()
 end
 
 if getgenv and getgenv().DC_ then
-for i, v in pairs(DC_) do
-v:Disconnect()
-DC_[i] = nil
-end
+    for i, v in pairs(DC_) do
+        v:Disconnect()
+        DC_[i] = nil
+    end
 end
 
 getgenv().DC_ = {}
 
 local CProvider = game:GetService("ContentProvider")
-
 local creations = 0
-
 --Window
 local BarIn = "rbxassetid://12002282362"
 --Bar
